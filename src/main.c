@@ -142,9 +142,9 @@ static void drawKeyboardOctave(void) {
 }
 
 void guiTask(void* param) {
-    playStartupMelody();
-    drawKeyboardOctave();
     EventBits_t lastKey = 0;
+
+    drawKeyboardOctave();
 
     for(;;) {
         EventBits_t currentKey = 0;
@@ -167,8 +167,48 @@ void guiTask(void* param) {
             lastKey = currentKey;
         }
 
-        vTaskDelay(10/portTICK_PERIOD_MS);
+        vTaskDelay(5/portTICK_PERIOD_MS);
     }
+}
+
+void soundTask(void* param) {
+    EventBits_t eventBits = 0;
+    uint16_t noteToPlay = 0;
+    uint16_t lastPlayedNote = 0;
+
+    playStartupMelody();
+
+    for(;;) {
+        if(xEventGroupWaitBits(keyboardHitEventGroup, KEYBOARD_ALL, pdFALSE, pdFALSE, 10/portTICK_PERIOD_MS)) {
+            eventBits = xEventGroupGetBits(keyboardHitEventGroup);
+            if(eventBits & KEYBOARD_C) noteToPlay = NOTE_C4;
+            else if(eventBits & KEYBOARD_CS) noteToPlay = NOTE_C4S;
+            else if(eventBits & KEYBOARD_D) noteToPlay = NOTE_D4;
+            else if(eventBits & KEYBOARD_DS) noteToPlay = NOTE_D4S;
+            else if(eventBits & KEYBOARD_E) noteToPlay = NOTE_E4;
+            else if(eventBits & KEYBOARD_F) noteToPlay = NOTE_F4;
+            else if(eventBits & KEYBOARD_FS) noteToPlay = NOTE_F4S;
+            else if(eventBits & KEYBOARD_G) noteToPlay = NOTE_G4;
+            else if(eventBits & KEYBOARD_GS) noteToPlay = NOTE_G4S;
+            else if(eventBits & KEYBOARD_A) noteToPlay = NOTE_A4;
+            else if(eventBits & KEYBOARD_AS) noteToPlay = NOTE_A4S;
+            else if(eventBits & KEYBOARD_H) noteToPlay = NOTE_H4;
+        } else {
+            noteToPlay = 0;
+        }
+        if(noteToPlay != lastPlayedNote) {
+            if(noteToPlay != 0) {
+                buzzer_start(noteToPlay, 10000);
+                ESP_LOGI(TAG, "Playing note: %d Hz", noteToPlay);
+            } else {
+                buzzer_stop();
+                ESP_LOGI(TAG, "Stopping sound");
+            }
+            lastPlayedNote = noteToPlay;
+        }
+        vTaskDelay(5/portTICK_PERIOD_MS);
+    }
+
 }
 
 void app_main()
@@ -179,7 +219,7 @@ void app_main()
 
     //Create templateTask
     xTaskCreatePinnedToCore(guiTask, "guiTask", 2*2048, NULL, 10, NULL, 0);
-    //xTaskCreatePinnedToCore(soundTask, "soundTask", 2*2048, NULL, 10, NULL, 1);
+    xTaskCreatePinnedToCore(soundTask, "soundTask", 2*2048, NULL, 10, NULL, 1);
 
     return;
 }
