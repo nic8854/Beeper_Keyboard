@@ -167,7 +167,7 @@ void guiTask(void* param) {
             lastKey = currentKey;
         }
 
-        vTaskDelay(5/portTICK_PERIOD_MS);
+        vTaskDelay(10/portTICK_PERIOD_MS);
     }
 }
 
@@ -176,6 +176,7 @@ void soundTask(void* param) {
     uint16_t noteToPlay = 0;
     uint16_t lastPlayedNote = 0;
 
+    buzzer_set_volume(100);
     playStartupMelody();
 
     for(;;) {
