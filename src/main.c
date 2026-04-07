@@ -11,11 +11,42 @@
 #include "eduboard2.h"
 #include "memon.h"
 
-#include "math.h"
+#include "notes_to_freq.h"
 
-#define TAG "TEMPLATE"
+#define TAG "KEYBOARD"
 
 void templateTask(void* param) {
+
+    buzzer_start(NOTE_C3, 100);
+    vTaskDelay(100/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_D3, 100);
+    vTaskDelay(100/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_E3, 100);
+    vTaskDelay(100/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_F3, 100);
+    vTaskDelay(100/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_G3, 100);
+    vTaskDelay(100/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_A3, 100);
+    vTaskDelay(100/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_H3, 100);
+    vTaskDelay(100/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_C4, 100);
+    vTaskDelay(100/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_D4, 100);
+    vTaskDelay(100/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_E4, 100);
+    vTaskDelay(100/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_F4, 100);
+    vTaskDelay(100/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_G4, 100);
+    vTaskDelay(100/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_A4, 100);
+    vTaskDelay(100/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_H4, 100);
+    vTaskDelay(100/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_C5, 300);
+    vTaskDelay(100/portTICK_PERIOD_MS);
 
     for(;;) {
         vTaskDelay(10/portTICK_PERIOD_MS);
