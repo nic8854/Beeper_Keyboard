@@ -106,7 +106,7 @@ void guiTask(void* param) {
     drawKeyboardOctave();
 
     for(;;) {
-        if(ft6236_is_touched) {
+        if(ft6236_is_touched()) {
             touchevent_t te = ft6236_get_touch_event(true);
             if(te.touches > 0) {
                 int x = te.points[0].x;
