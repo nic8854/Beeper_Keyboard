@@ -14,6 +14,7 @@
 #include "notes_to_freq.h"
 
 #define TAG "KEYBOARD"
+#define MELODY_SPEED 75 //ms per step
 
 EventGroupHandle_t keyboardHitEventGroup;
 #define KEYBOARD_C          (1 << 0)  // bit 0
@@ -71,36 +72,35 @@ static EventBits_t keyFromTouchPoint(int x, int y) {
 }
 
 static void playStartupMelody() {
-    buzzer_start(NOTE_C3, 100);
-    vTaskDelay(100/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_D3, 100);
-    vTaskDelay(100/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_E3, 100);
-    vTaskDelay(100/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_F3, 100);
-    vTaskDelay(100/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_G3, 100);
-    vTaskDelay(100/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_A3, 100);
-    vTaskDelay(100/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_H3, 100);
-    vTaskDelay(100/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_C4, 100);
-    vTaskDelay(100/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_D4, 100);
-    vTaskDelay(100/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_E4, 100);
-    vTaskDelay(100/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_F4, 100);
-    vTaskDelay(100/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_G4, 100);
-    vTaskDelay(100/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_A4, 100);
-    vTaskDelay(100/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_H4, 100);
-    vTaskDelay(100/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_C5, 300);
-    vTaskDelay(100/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_C3, MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_D3, MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_E3, MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_F3, MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_G3, MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_A3, MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_H3, MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_C4, MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_D4, MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_E4, MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_F4, MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_G4, MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_A4, MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_H4, MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(NOTE_C5, MELODY_SPEED * 3);
 }
 
 static void drawKeyboardOctave(void) {
