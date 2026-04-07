@@ -30,6 +30,46 @@ EventGroupHandle_t keyboardHitEventGroup;
 #define KEYBOARD_H          (1 << 11) // bit 11
 #define KEYBOARD_ALL        (KEYBOARD_C | KEYBOARD_CS | KEYBOARD_D | KEYBOARD_DS | KEYBOARD_E | KEYBOARD_F | KEYBOARD_FS | KEYBOARD_G | KEYBOARD_GS | KEYBOARD_A | KEYBOARD_AS | KEYBOARD_H)
 
+static EventBits_t keyFromTouchPoint(int x, int y) {
+    const int screenWidth = (int)lcdGetWidth();
+    const int screenHeight = (int)lcdGetHeight();
+    const int top = 16;
+    const int left = 0;
+    const int right = (screenWidth > 0 ? screenWidth : CONFIG_WIDTH) - 1;
+    const int bottom = (screenHeight > 0 ? screenHeight : CONFIG_HEIGHT) - 1;
+
+    if (x < left || x > right || y < top || y > bottom) {
+        return 0;
+    }
+
+    const int keyboardWidth = right - left + 1;
+    const int whiteKeyWidth = keyboardWidth / 7;
+    const int whiteKeyHeight = bottom - top + 1;
+    const int blackKeyWidth = (whiteKeyWidth * 2) / 3;
+    const int blackKeyHeight = (whiteKeyHeight * 3) / 5;
+
+    const int blackKeyAfterWhite[] = {0, 1, 3, 4, 5};
+    const EventBits_t blackKeyBits[] = {KEYBOARD_CS, KEYBOARD_DS, KEYBOARD_FS, KEYBOARD_GS, KEYBOARD_AS};
+    for (int i = 0; i < (int)(sizeof(blackKeyAfterWhite) / sizeof(blackKeyAfterWhite[0])); i++) {
+        const int idx = blackKeyAfterWhite[i];
+        const int boundaryX = left + ((idx + 1) * whiteKeyWidth);
+        int x1 = boundaryX - (blackKeyWidth / 2);
+        int x2 = x1 + blackKeyWidth - 1;
+        if (x1 < left) x1 = left;
+        if (x2 > right) x2 = right;
+
+        if (x >= x1 && x <= x2 && y >= top && y <= (top + blackKeyHeight)) {
+            return blackKeyBits[i];
+        }
+    }
+
+    const EventBits_t whiteKeyBits[] = {KEYBOARD_C, KEYBOARD_D, KEYBOARD_E, KEYBOARD_F, KEYBOARD_G, KEYBOARD_A, KEYBOARD_H};
+    int whiteIdx = (x - left) / whiteKeyWidth;
+    if (whiteIdx < 0) whiteIdx = 0;
+    if (whiteIdx > 6) whiteIdx = 6;
+    return whiteKeyBits[whiteIdx];
+}
+
 static void playStartupMelody() {
     buzzer_start(NOTE_C3, 100);
     vTaskDelay(100/portTICK_PERIOD_MS);
@@ -104,17 +144,27 @@ static void drawKeyboardOctave(void) {
 void guiTask(void* param) {
     playStartupMelody();
     drawKeyboardOctave();
+    EventBits_t lastKey = 0;
 
     for(;;) {
-        if(ft6236_is_touched()) {
+        EventBits_t currentKey = 0;
+
+        if (ft6236_is_touched()) {
             touchevent_t te = ft6236_get_touch_event(true);
-            if(te.touches > 0) {
-                int x = te.points[0].x;
-                int y = te.points[0].y;
-                ESP_LOGI(TAG, "Touch at x=%d y=%d", x, y);
+            if (te.touches > 0) {
+                const int x = te.points[0].x;
+                const int y = te.points[0].y;
+                currentKey = keyFromTouchPoint(x, y);
             }
-        } else {
+        }
+
+        if (currentKey != lastKey) {
             xEventGroupClearBits(keyboardHitEventGroup, KEYBOARD_ALL);
+            if (currentKey != 0) {
+                xEventGroupSetBits(keyboardHitEventGroup, currentKey);
+                ESP_LOGI(TAG, "Key press bit: 0x%04lx", (unsigned long)currentKey);
+            }
+            lastKey = currentKey;
         }
 
         vTaskDelay(10/portTICK_PERIOD_MS);
