@@ -11,10 +11,13 @@
 #include "eduboard2.h"
 #include "memon.h"
 
-#include "notes_to_freq.h"
+#include "noteToFrequency.h"
 
 #define TAG "KEYBOARD"
 #define MELODY_SPEED 75 //ms per step
+
+static octave_t octave = Octave_4;
+static uint8_t volume = 100;
 
 EventGroupHandle_t keyboardHitEventGroup;
 #define KEYBOARD_C          (1 << 0)  // bit 0
@@ -72,35 +75,35 @@ static EventBits_t keyFromTouchPoint(int x, int y) {
 }
 
 static void playStartupMelody() {
-    buzzer_start(NOTE_C3, MELODY_SPEED);
+    buzzer_start(noteToFrequency(Note_C, Octave_3), MELODY_SPEED);
     vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_D3, MELODY_SPEED);
+    buzzer_start(noteToFrequency(Note_D, Octave_3), MELODY_SPEED);
     vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_E3, MELODY_SPEED);
+    buzzer_start(noteToFrequency(Note_E, Octave_3), MELODY_SPEED);
     vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_F3, MELODY_SPEED);
+    buzzer_start(noteToFrequency(Note_F, Octave_3), MELODY_SPEED);
     vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_G3, MELODY_SPEED);
+    buzzer_start(noteToFrequency(Note_G, Octave_3), MELODY_SPEED);
     vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_A3, MELODY_SPEED);
+    buzzer_start(noteToFrequency(Note_A, Octave_3), MELODY_SPEED);
     vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_H3, MELODY_SPEED);
+    buzzer_start(noteToFrequency(Note_H, Octave_3), MELODY_SPEED);
     vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_C4, MELODY_SPEED);
+    buzzer_start(noteToFrequency(Note_C, Octave_4), MELODY_SPEED);
     vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_D4, MELODY_SPEED);
+    buzzer_start(noteToFrequency(Note_D, Octave_4), MELODY_SPEED);
     vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_E4, MELODY_SPEED);
+    buzzer_start(noteToFrequency(Note_E, Octave_4), MELODY_SPEED);
     vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_F4, MELODY_SPEED);
+    buzzer_start(noteToFrequency(Note_F, Octave_4), MELODY_SPEED);
     vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_G4, MELODY_SPEED);
+    buzzer_start(noteToFrequency(Note_G, Octave_4), MELODY_SPEED);
     vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_A4, MELODY_SPEED);
+    buzzer_start(noteToFrequency(Note_A, Octave_4), MELODY_SPEED);
     vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_H4, MELODY_SPEED);
+    buzzer_start(noteToFrequency(Note_H, Octave_4), MELODY_SPEED);
     vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(NOTE_C5, MELODY_SPEED * 3);
+    buzzer_start(noteToFrequency(Note_C, Octave_5), MELODY_SPEED * 3);
 }
 
 static void drawKeyboardOctave(void) {
@@ -182,18 +185,18 @@ void soundTask(void* param) {
     for(;;) {
         if(xEventGroupWaitBits(keyboardHitEventGroup, KEYBOARD_ALL, pdFALSE, pdFALSE, 10/portTICK_PERIOD_MS)) {
             eventBits = xEventGroupGetBits(keyboardHitEventGroup);
-            if(eventBits & KEYBOARD_C) noteToPlay = NOTE_C4;
-            else if(eventBits & KEYBOARD_CS) noteToPlay = NOTE_C4S;
-            else if(eventBits & KEYBOARD_D) noteToPlay = NOTE_D4;
-            else if(eventBits & KEYBOARD_DS) noteToPlay = NOTE_D4S;
-            else if(eventBits & KEYBOARD_E) noteToPlay = NOTE_E4;
-            else if(eventBits & KEYBOARD_F) noteToPlay = NOTE_F4;
-            else if(eventBits & KEYBOARD_FS) noteToPlay = NOTE_F4S;
-            else if(eventBits & KEYBOARD_G) noteToPlay = NOTE_G4;
-            else if(eventBits & KEYBOARD_GS) noteToPlay = NOTE_G4S;
-            else if(eventBits & KEYBOARD_A) noteToPlay = NOTE_A4;
-            else if(eventBits & KEYBOARD_AS) noteToPlay = NOTE_A4S;
-            else if(eventBits & KEYBOARD_H) noteToPlay = NOTE_H4;
+            if(eventBits & KEYBOARD_C) noteToPlay = noteToFrequency(Note_C, octave);
+            else if(eventBits & KEYBOARD_CS) noteToPlay = noteToFrequency(Note_Cs, octave);
+            else if(eventBits & KEYBOARD_D) noteToPlay = noteToFrequency(Note_D, octave);
+            else if(eventBits & KEYBOARD_DS) noteToPlay = noteToFrequency(Note_Ds, octave);
+            else if(eventBits & KEYBOARD_E) noteToPlay = noteToFrequency(Note_E, octave);
+            else if(eventBits & KEYBOARD_F) noteToPlay = noteToFrequency(Note_F, octave);
+            else if(eventBits & KEYBOARD_FS) noteToPlay = noteToFrequency(Note_Fs, octave);
+            else if(eventBits & KEYBOARD_G) noteToPlay = noteToFrequency(Note_G, octave);
+            else if(eventBits & KEYBOARD_GS) noteToPlay = noteToFrequency(Note_Gs, octave);
+            else if(eventBits & KEYBOARD_A) noteToPlay = noteToFrequency(Note_A, octave);
+            else if(eventBits & KEYBOARD_AS) noteToPlay = noteToFrequency(Note_As, octave);
+            else if(eventBits & KEYBOARD_H) noteToPlay = noteToFrequency(Note_H, octave);
         } else {
             noteToPlay = 0;
         }
@@ -207,9 +210,47 @@ void soundTask(void* param) {
             }
             lastPlayedNote = noteToPlay;
         }
-        vTaskDelay(5/portTICK_PERIOD_MS);
     }
+}
 
+void inputTask(void* param) {
+    int32_t rotationChange = 0;
+    uint32_t eventBits;
+    for(;;) {
+        if(button_get_state(SW0, true) == SHORT_PRESSED) {
+            if(octave > Octave_0) {
+                octave --;
+                led_set(LED0, true);
+            }
+
+        } else {
+            led_set(LED0, false);
+        }
+
+        if(button_get_state(SW1, true) == SHORT_PRESSED) {
+            if(octave < Octave_8) {
+                octave ++;
+                led_set(LED1, true);
+            }
+        } else {
+            led_set(LED1, false);
+        }
+        
+        rotationChange = rotary_encoder_get_rotation(true);
+            if(rotationChange != 0) {
+                if(volume + rotationChange > 100) {
+                    volume = 100;
+                } else if(volume + rotationChange < 1) {
+                    volume = 1;
+                } else {
+                    volume += rotationChange;
+                }
+                buzzer_set_volume(volume);
+                ESP_LOGI(TAG, "Volume changed to: %d", volume);
+        }
+
+        vTaskDelay(10/portTICK_PERIOD_MS);
+    }
 }
 
 void app_main()
@@ -221,6 +262,7 @@ void app_main()
     //Create templateTask
     xTaskCreatePinnedToCore(guiTask, "guiTask", 2*2048, NULL, 10, NULL, 0);
     xTaskCreatePinnedToCore(soundTask, "soundTask", 2*2048, NULL, 10, NULL, 1);
+    xTaskCreatePinnedToCore(inputTask, "inputTask", 2*2048, NULL, 10, NULL, 1);
 
     return;
 }
