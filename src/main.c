@@ -220,20 +220,22 @@ void inputTask(void* param) {
         if(button_get_state(SW0, true) == SHORT_PRESSED) {
             if(octave > Octave_0) {
                 octave --;
-                led_set(LED0, true);
             }
 
-        } else {
-            led_set(LED0, false);
         }
 
         if(button_get_state(SW1, true) == SHORT_PRESSED) {
             if(octave < Octave_8) {
                 octave ++;
-                led_set(LED1, true);
             }
-        } else {
-            led_set(LED1, false);
+        }
+
+        for(int i = LED0; i <= LED7; i++) {
+            if(i < octave) {
+                led_set(i, true);
+            } else {
+                led_set(i, false);
+            }
         }
         
         rotationChange = rotary_encoder_get_rotation(true);
