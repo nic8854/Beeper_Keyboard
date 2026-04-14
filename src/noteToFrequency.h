@@ -1,7 +1,51 @@
 #ifndef NOTES_TO_FREQ_H
 #define NOTES_TO_FREQ_H
 
-// Equal-tempered scale (A4 = 440 Hz), rounded to nearest integer.
+#include <stdint.h>
+
+#define BASE_A4 440
+
+typedef enum note_t {
+    Note_C = 0,
+    Note_Cs = 1,
+    Note_D = 2,
+    Note_Ds = 3,
+    Note_E = 4,
+    Note_F = 5,
+    Note_Fs = 6,
+    Note_G = 7,
+    Note_Gs = 8,
+    Note_A = 9,
+    Note_As = 10,
+    Note_H = 11
+} note_t;
+
+typedef enum octave_t {
+    Octave_0 = 0,
+    Octave_1 = 1,
+    Octave_2 = 2,
+    Octave_3 = 3,
+    Octave_4 = 4,
+    Octave_5 = 5,
+    Octave_6 = 6,
+    Octave_7 = 7,
+    Octave_8 = 8
+} octave_t;
+
+uint16_t noteToFrequency(note_t note, octave_t octave);
+
+#define NOTE_C0   16
+#define NOTE_C0S  17
+#define NOTE_D0   18
+#define NOTE_D0S  19
+#define NOTE_E0   21
+#define NOTE_F0   22
+#define NOTE_F0S  23
+#define NOTE_G0   25
+#define NOTE_G0S  26
+#define NOTE_A0   28
+#define NOTE_A0S  29
+#define NOTE_H0   31
 
 #define NOTE_C1   33
 #define NOTE_C1S  35
@@ -15,6 +59,7 @@
 #define NOTE_A1   55
 #define NOTE_A1S  58
 #define NOTE_H1   62
+
 #define NOTE_C2   65
 #define NOTE_C2S  69
 #define NOTE_D2   73
@@ -27,6 +72,7 @@
 #define NOTE_A2   110
 #define NOTE_A2S  117
 #define NOTE_H2   123
+
 #define NOTE_C3   131
 #define NOTE_C3S  139
 #define NOTE_D3   147
@@ -39,6 +85,7 @@
 #define NOTE_A3   220
 #define NOTE_A3S  233
 #define NOTE_H3   247
+
 #define NOTE_C4   262
 #define NOTE_C4S  277
 #define NOTE_D4   294
@@ -51,6 +98,7 @@
 #define NOTE_A4   440
 #define NOTE_A4S  466
 #define NOTE_H4   494
+
 #define NOTE_C5   523
 #define NOTE_C5S  554
 #define NOTE_D5   587
@@ -63,6 +111,7 @@
 #define NOTE_A5   880
 #define NOTE_A5S  932
 #define NOTE_H5   988
+
 #define NOTE_C6   1047
 #define NOTE_C6S  1109
 #define NOTE_D6   1175
@@ -75,6 +124,7 @@
 #define NOTE_A6   1760
 #define NOTE_A6S  1865
 #define NOTE_H6   1976
+
 #define NOTE_C7   2093
 #define NOTE_C7S  2217
 #define NOTE_D7   2349
@@ -87,10 +137,19 @@
 #define NOTE_A7   3520
 #define NOTE_A7S  3729
 #define NOTE_H7   3951
+
 #define NOTE_C8   4186
 #define NOTE_C8S  4435
 #define NOTE_D8   4699
 #define NOTE_D8S  4978
+#define NOTE_E8   5274
+#define NOTE_F8   5588
+#define NOTE_F8S  5919
+#define NOTE_G8   6272
+#define NOTE_G8S  6645
+#define NOTE_A8   7040
+#define NOTE_A8S  7459
+#define NOTE_H8   7902
 
 
 #endif // NOTES_TO_FREQ_H
