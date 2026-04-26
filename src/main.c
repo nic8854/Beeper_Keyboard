@@ -75,38 +75,6 @@ static EventBits_t keyFromTouchPoint(int x, int y) {
     return whiteKeyBits[whiteIdx];
 }
 
-static void playStartupMelody() {
-    buzzer_start(noteToFrequency(Note_C, Octave_3), MELODY_SPEED);
-    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(noteToFrequency(Note_D, Octave_3), MELODY_SPEED);
-    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(noteToFrequency(Note_E, Octave_3), MELODY_SPEED);
-    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(noteToFrequency(Note_F, Octave_3), MELODY_SPEED);
-    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(noteToFrequency(Note_G, Octave_3), MELODY_SPEED);
-    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(noteToFrequency(Note_A, Octave_3), MELODY_SPEED);
-    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(noteToFrequency(Note_H, Octave_3), MELODY_SPEED);
-    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(noteToFrequency(Note_C, Octave_4), MELODY_SPEED);
-    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(noteToFrequency(Note_D, Octave_4), MELODY_SPEED);
-    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(noteToFrequency(Note_E, Octave_4), MELODY_SPEED);
-    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(noteToFrequency(Note_F, Octave_4), MELODY_SPEED);
-    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(noteToFrequency(Note_G, Octave_4), MELODY_SPEED);
-    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(noteToFrequency(Note_A, Octave_4), MELODY_SPEED);
-    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(noteToFrequency(Note_H, Octave_4), MELODY_SPEED);
-    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
-    buzzer_start(noteToFrequency(Note_C, Octave_5), MELODY_SPEED * 3);
-}
-
 static void drawKeyboardOctave(void) {
     const int screenWidth = (int)lcdGetWidth();
     const int screenHeight = (int)lcdGetHeight();
@@ -143,6 +111,39 @@ static void drawKeyboardOctave(void) {
         lcdDrawRect(x1, top, x2, top + blackKeyHeight, GRAY);
     }
     lcdUpdateVScreen();
+}
+
+
+static void playStartupMelody() {
+    buzzer_start(noteToFrequency(Note_C, Octave_3), MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(noteToFrequency(Note_D, Octave_3), MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(noteToFrequency(Note_E, Octave_3), MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(noteToFrequency(Note_F, Octave_3), MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(noteToFrequency(Note_G, Octave_3), MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(noteToFrequency(Note_A, Octave_3), MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(noteToFrequency(Note_H, Octave_3), MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(noteToFrequency(Note_C, Octave_4), MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(noteToFrequency(Note_D, Octave_4), MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(noteToFrequency(Note_E, Octave_4), MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(noteToFrequency(Note_F, Octave_4), MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(noteToFrequency(Note_G, Octave_4), MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(noteToFrequency(Note_A, Octave_4), MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(noteToFrequency(Note_H, Octave_4), MELODY_SPEED);
+    vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
+    buzzer_start(noteToFrequency(Note_C, Octave_5), MELODY_SPEED * 3);
 }
 
 void guiTask(void* param) {
@@ -199,10 +200,10 @@ void soundTask(void* param) {
             else if(eventBits & KEYBOARD_A) noteToPlay = noteToFrequency(Note_A, octave);
             else if(eventBits & KEYBOARD_AS) noteToPlay = noteToFrequency(Note_As, octave);
             else if(eventBits & KEYBOARD_H) noteToPlay = noteToFrequency(Note_H, octave);
-            
         } else {
             noteToPlay = 0;
         }
+
         if(noteToPlay != lastPlayedNote) {
             if(noteToPlay != 0) {
                 decayVolume = volume;
@@ -214,11 +215,13 @@ void soundTask(void* param) {
             }
             lastPlayedNote = noteToPlay;
         }
+
         if(noteToPlay != 0 && decayVolume > 5 && decay) {
             buzzer_set_volume(decayVolume);
             decayVolume--;
             ESP_LOGI(TAG, "Decaying volume: %d", decayVolume);
         }
+
         vTaskDelay(1/portTICK_PERIOD_MS);
     }
 }
