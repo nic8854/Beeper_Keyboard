@@ -15,10 +15,14 @@
 
 #define TAG "KEYBOARD"
 #define MELODY_SPEED 75 //ms per step
+#define TREMOLO_FREQUENCY_VARIATION 2 //in %
+#define TREMOLO_SPEED_FACTOR 2
+#define DECAY_SPEED_FACTOR 1
 
 static octave_t octave = Octave_4;
 static uint8_t volume = 100;
 static bool decay = false;
+static bool tremolo = false;
 
 EventGroupHandle_t keyboardHitEventGroup;
 #define KEYBOARD_C          (1 << 0)  // bit 0
@@ -181,6 +185,9 @@ void soundTask(void* param) {
     uint16_t noteToPlay = 0;
     uint16_t lastPlayedNote = 0;
     uint8_t decayVolume = volume;
+    uint16_t tremoloCounter = 0;
+    float noteFrequency = 0;
+    float tremoloVariation = 0;
 
     buzzer_set_volume(volume);
     playStartupMelody();
@@ -204,6 +211,18 @@ void soundTask(void* param) {
             noteToPlay = 0;
         }
 
+        if(tremolo && noteToPlay != 0) {
+            noteFrequency = (float)noteToPlay;
+            tremoloVariation = (sinf(2 * 3.14159f * (float)tremoloCounter / 255) + 1) / 2;
+            noteFrequency += (tremoloVariation * TREMOLO_FREQUENCY_VARIATION / 100) * noteFrequency;
+            noteToPlay = (uint16_t)noteFrequency;
+
+            tremoloCounter += TREMOLO_SPEED_FACTOR;
+            if(tremoloCounter >= 255) {
+                tremoloCounter = 0;
+            }
+        }
+
         if(noteToPlay != lastPlayedNote) {
             if(noteToPlay != 0) {
                 decayVolume = volume;
@@ -218,8 +237,7 @@ void soundTask(void* param) {
 
         if(noteToPlay != 0 && decayVolume > 5 && decay) {
             buzzer_set_volume(decayVolume);
-            decayVolume--;
-            ESP_LOGI(TAG, "Decaying volume: %d", decayVolume);
+            decayVolume -= DECAY_SPEED_FACTOR;
         }
 
         vTaskDelay(1/portTICK_PERIOD_MS);
@@ -244,6 +262,10 @@ void inputTask(void* param) {
 
         if(button_get_state(SW2, true) == SHORT_PRESSED) {
             decay = !decay;
+        }
+
+        if(button_get_state(SW3, true) == SHORT_PRESSED) {
+            tremolo = !tremolo;
         }
 
         for(int i = LED0; i <= LED7; i++) {
