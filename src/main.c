@@ -15,9 +15,14 @@
 
 #define TAG "KEYBOARD"
 #define MELODY_SPEED 75 //ms per step
+#define TREMOLO_FREQUENCY_VARIATION 2 //in %
+#define TREMOLO_SPEED_FACTOR 2
+#define DECAY_SPEED_FACTOR 1
 
 static octave_t octave = Octave_4;
-static uint8_t volume = 100;
+static uint8_t buzzerVolume = 100;
+static bool decay = false;
+static bool tremolo = false;
 
 EventGroupHandle_t keyboardHitEventGroup;
 #define KEYBOARD_C          (1 << 0)  // bit 0
@@ -34,45 +39,87 @@ EventGroupHandle_t keyboardHitEventGroup;
 #define KEYBOARD_H          (1 << 11) // bit 11
 #define KEYBOARD_ALL        (KEYBOARD_C | KEYBOARD_CS | KEYBOARD_D | KEYBOARD_DS | KEYBOARD_E | KEYBOARD_F | KEYBOARD_FS | KEYBOARD_G | KEYBOARD_GS | KEYBOARD_A | KEYBOARD_AS | KEYBOARD_H)
 
-static EventBits_t keyFromTouchPoint(int x, int y) {
+typedef struct {
+    int top, left, right, bottom;
+    int keyboardWidth, whiteKeyWidth, whiteKeyHeight;
+    int blackKeyWidth, blackKeyHeight;
+} KeyboardGeometry;
+
+static const int blackKeyAfterWhite[] = {0, 1, 3, 4, 5};
+static const EventBits_t blackKeyBits[] = {KEYBOARD_CS, KEYBOARD_DS, KEYBOARD_FS, KEYBOARD_GS, KEYBOARD_AS};
+static const EventBits_t whiteKeyBits[] = {KEYBOARD_C, KEYBOARD_D, KEYBOARD_E, KEYBOARD_F, KEYBOARD_G, KEYBOARD_A, KEYBOARD_H};
+
+static KeyboardGeometry getKeyboardGeometry(void) {
+    KeyboardGeometry geometry;
     const int screenWidth = (int)lcdGetWidth();
     const int screenHeight = (int)lcdGetHeight();
-    const int top = 16;
-    const int left = 0;
-    const int right = (screenWidth > 0 ? screenWidth : CONFIG_WIDTH) - 1;
-    const int bottom = (screenHeight > 0 ? screenHeight : CONFIG_HEIGHT) - 1;
+    
+    geometry.top = 16;
+    geometry.left = 0;
+    geometry.right = (screenWidth > 0 ? screenWidth : CONFIG_WIDTH) - 1;
+    geometry.bottom = (screenHeight > 0 ? screenHeight : CONFIG_HEIGHT) - 1;
+    
+    geometry.keyboardWidth = geometry.right - geometry.left + 1;
+    geometry.whiteKeyWidth = geometry.keyboardWidth / 7;
+    geometry.whiteKeyHeight = geometry.bottom - geometry.top + 1;
+    geometry.blackKeyWidth = (geometry.whiteKeyWidth * 2) / 3;
+    geometry.blackKeyHeight = (geometry.whiteKeyHeight * 3) / 5;
+    
+    return geometry;
+}
 
-    if (x < left || x > right || y < top || y > bottom) {
+static EventBits_t keyFromTouchPoint(int x, int y) {
+    KeyboardGeometry geometry = getKeyboardGeometry();
+
+    if (x < geometry.left || x > geometry.right || y < geometry.top || y > geometry.bottom) {
         return 0;
     }
 
-    const int keyboardWidth = right - left + 1;
-    const int whiteKeyWidth = keyboardWidth / 7;
-    const int whiteKeyHeight = bottom - top + 1;
-    const int blackKeyWidth = (whiteKeyWidth * 2) / 3;
-    const int blackKeyHeight = (whiteKeyHeight * 3) / 5;
-
-    const int blackKeyAfterWhite[] = {0, 1, 3, 4, 5};
-    const EventBits_t blackKeyBits[] = {KEYBOARD_CS, KEYBOARD_DS, KEYBOARD_FS, KEYBOARD_GS, KEYBOARD_AS};
     for (int i = 0; i < (int)(sizeof(blackKeyAfterWhite) / sizeof(blackKeyAfterWhite[0])); i++) {
         const int idx = blackKeyAfterWhite[i];
-        const int boundaryX = left + ((idx + 1) * whiteKeyWidth);
-        int x1 = boundaryX - (blackKeyWidth / 2);
-        int x2 = x1 + blackKeyWidth - 1;
-        if (x1 < left) x1 = left;
-        if (x2 > right) x2 = right;
+        const int boundaryX = geometry.left + ((idx + 1) * geometry.whiteKeyWidth);
+        int x1 = boundaryX - (geometry.blackKeyWidth / 2);
+        int x2 = x1 + geometry.blackKeyWidth - 1;
+        if (x1 < geometry.left) x1 = geometry.left;
+        if (x2 > geometry.right) x2 = geometry.right;
 
-        if (x >= x1 && x <= x2 && y >= top && y <= (top + blackKeyHeight)) {
+        if (x >= x1 && x <= x2 && y >= geometry.top && y <= (geometry.top + geometry.blackKeyHeight)) {
             return blackKeyBits[i];
         }
     }
 
-    const EventBits_t whiteKeyBits[] = {KEYBOARD_C, KEYBOARD_D, KEYBOARD_E, KEYBOARD_F, KEYBOARD_G, KEYBOARD_A, KEYBOARD_H};
-    int whiteIdx = (x - left) / whiteKeyWidth;
+    int whiteIdx = (x - geometry.left) / geometry.whiteKeyWidth;
     if (whiteIdx < 0) whiteIdx = 0;
     if (whiteIdx > 6) whiteIdx = 6;
     return whiteKeyBits[whiteIdx];
 }
+
+static void drawKeyboardOctave(void) {
+    KeyboardGeometry geometry = getKeyboardGeometry();
+
+    // Draw white keys
+    for (int i = 0; i < 7; i++) {
+        int x1 = geometry.left + (i * geometry.whiteKeyWidth);
+        int x2 = x1 + geometry.whiteKeyWidth - 1;
+        if (x2 > geometry.right) x2 = geometry.right;
+        lcdDrawFillRect(x1, geometry.top, x2, geometry.bottom, WHITE);
+        lcdDrawRect(x1, geometry.top, x2, geometry.bottom, GRAY);
+    }
+
+    // Draw black keys
+    for (int i = 0; i < (int)(sizeof(blackKeyAfterWhite) / sizeof(blackKeyAfterWhite[0])); i++) {
+        const int idx = blackKeyAfterWhite[i];
+        const int boundaryX = geometry.left + ((idx + 1) * geometry.whiteKeyWidth);
+        int x1 = boundaryX - (geometry.blackKeyWidth / 2);
+        int x2 = x1 + geometry.blackKeyWidth - 1;
+        if (x1 < geometry.left) x1 = geometry.left;
+        if (x2 > geometry.right) x2 = geometry.right;
+        lcdDrawFillRect(x1, geometry.top, x2, geometry.top + geometry.blackKeyHeight, BLACK);
+        lcdDrawRect(x1, geometry.top, x2, geometry.top + geometry.blackKeyHeight, GRAY);
+    }
+    lcdUpdateVScreen();
+}
+
 
 static void playStartupMelody() {
     buzzer_start(noteToFrequency(Note_C, Octave_3), MELODY_SPEED);
@@ -104,44 +151,6 @@ static void playStartupMelody() {
     buzzer_start(noteToFrequency(Note_H, Octave_4), MELODY_SPEED);
     vTaskDelay(MELODY_SPEED/portTICK_PERIOD_MS);
     buzzer_start(noteToFrequency(Note_C, Octave_5), MELODY_SPEED * 3);
-}
-
-static void drawKeyboardOctave(void) {
-    const int screenWidth = (int)lcdGetWidth();
-    const int screenHeight = (int)lcdGetHeight();
-    const int top = 16;
-    const int left = 0;
-    const int right = (screenWidth > 0 ? screenWidth : CONFIG_WIDTH) - 1;
-    const int bottom = (screenHeight > 0 ? screenHeight : CONFIG_HEIGHT) - 1;
-
-    const int keyboardWidth = right - left + 1;
-    const int whiteKeyWidth = keyboardWidth / 7;
-    const int whiteKeyHeight = bottom - top + 1;
-    const int blackKeyWidth = (whiteKeyWidth * 2) / 3;
-    const int blackKeyHeight = (whiteKeyHeight * 3) / 5;
-
-    // Draw white keys
-    for (int i = 0; i < 7; i++) {
-        int x1 = left + (i * whiteKeyWidth);
-        int x2 = x1 + whiteKeyWidth - 1;
-        if (x2 > right) x2 = right;
-        lcdDrawFillRect(x1, top, x2, bottom, WHITE);
-        lcdDrawRect(x1, top, x2, bottom, GRAY);
-    }
-
-    // Draw black keys
-    const int blackKeyAfterWhite[] = {0, 1, 3, 4, 5};
-    for (int i = 0; i < (int)(sizeof(blackKeyAfterWhite) / sizeof(blackKeyAfterWhite[0])); i++) {
-        const int idx = blackKeyAfterWhite[i];
-        const int boundaryX = left + ((idx + 1) * whiteKeyWidth);
-        int x1 = boundaryX - (blackKeyWidth / 2);
-        int x2 = x1 + blackKeyWidth - 1;
-        if (x1 < left) x1 = left;
-        if (x2 > right) x2 = right;
-        lcdDrawFillRect(x1, top, x2, top + blackKeyHeight, BLACK);
-        lcdDrawRect(x1, top, x2, top + blackKeyHeight, GRAY);
-    }
-    lcdUpdateVScreen();
 }
 
 void guiTask(void* param) {
@@ -178,8 +187,13 @@ void soundTask(void* param) {
     EventBits_t eventBits = 0;
     uint16_t noteToPlay = 0;
     uint16_t lastPlayedNote = 0;
+    uint8_t buzzerVolumeLast = buzzerVolume;
+    uint8_t decayVolume = buzzerVolume;
+    uint16_t tremoloCounter = 0;
+    float noteFrequency = 0;
+    float tremoloVariation = 0;
 
-    buzzer_set_volume(100);
+    buzzer_set_volume(buzzerVolume);
     playStartupMelody();
 
     for(;;) {
@@ -200,8 +214,22 @@ void soundTask(void* param) {
         } else {
             noteToPlay = 0;
         }
+
+        if(tremolo && noteToPlay != 0) {
+            noteFrequency = (float)noteToPlay;
+            tremoloVariation = (sinf(2 * 3.14159f * (float)tremoloCounter / 255) + 1) / 2;
+            noteFrequency += (tremoloVariation * TREMOLO_FREQUENCY_VARIATION / 100) * noteFrequency;
+            noteToPlay = (uint16_t)noteFrequency;
+
+            tremoloCounter += TREMOLO_SPEED_FACTOR;
+            if(tremoloCounter >= 255) {
+                tremoloCounter = 0;
+            }
+        }
+
         if(noteToPlay != lastPlayedNote) {
             if(noteToPlay != 0) {
+                decayVolume = buzzerVolume;
                 buzzer_start(noteToPlay, 10000);
                 ESP_LOGI(TAG, "Playing note: %d Hz", noteToPlay);
             } else {
@@ -210,12 +238,23 @@ void soundTask(void* param) {
             }
             lastPlayedNote = noteToPlay;
         }
+
+        if(decay) {
+            if(noteToPlay != 0 && decayVolume > 5) {
+                buzzer_set_volume(decayVolume);
+                decayVolume -= DECAY_SPEED_FACTOR;
+            }
+        } else if (buzzerVolume != buzzerVolumeLast) {
+            buzzer_set_volume(buzzerVolume);
+            buzzerVolumeLast = buzzerVolume;
+        }
+
+        vTaskDelay(1/portTICK_PERIOD_MS);
     }
 }
 
 void inputTask(void* param) {
     int32_t rotationChange = 0;
-    uint32_t eventBits;
     for(;;) {
         if(button_get_state(SW0, true) == SHORT_PRESSED) {
             if(octave > Octave_0) {
@@ -230,6 +269,14 @@ void inputTask(void* param) {
             }
         }
 
+        if(button_get_state(SW2, true) == SHORT_PRESSED) {
+            decay = !decay;
+        }
+
+        if(button_get_state(SW3, true) == SHORT_PRESSED) {
+            tremolo = !tremolo;
+        }
+
         for(int i = LED0; i <= LED7; i++) {
             if(i < octave) {
                 led_set(i, true);
@@ -240,15 +287,14 @@ void inputTask(void* param) {
         
         rotationChange = rotary_encoder_get_rotation(true);
             if(rotationChange != 0) {
-                if(volume + rotationChange > 100) {
-                    volume = 100;
-                } else if(volume + rotationChange < 1) {
-                    volume = 1;
+                if(buzzerVolume + rotationChange > 100) {
+                    buzzerVolume = 100;
+                } else if(buzzerVolume + rotationChange < 1) {
+                    buzzerVolume = 1;
                 } else {
-                    volume += rotationChange;
+                    buzzerVolume += rotationChange;
                 }
-                buzzer_set_volume(volume);
-                ESP_LOGI(TAG, "Volume changed to: %d", volume);
+                ESP_LOGI(TAG, "Volume changed to: %d", buzzerVolume);
         }
 
         vTaskDelay(10/portTICK_PERIOD_MS);
