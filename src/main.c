@@ -37,7 +37,8 @@ EventGroupHandle_t keyboardHitEventGroup;
 #define KEYBOARD_A          (1 << 9)  // bit 9
 #define KEYBOARD_AS         (1 << 10) // bit 10
 #define KEYBOARD_H          (1 << 11) // bit 11
-#define KEYBOARD_ALL        (KEYBOARD_C | KEYBOARD_CS | KEYBOARD_D | KEYBOARD_DS | KEYBOARD_E | KEYBOARD_F | KEYBOARD_FS | KEYBOARD_G | KEYBOARD_GS | KEYBOARD_A | KEYBOARD_AS | KEYBOARD_H)
+#define KEYBOARD_C_HIGH     (1 << 12) // bit 12
+#define KEYBOARD_ALL        (KEYBOARD_C | KEYBOARD_CS | KEYBOARD_D | KEYBOARD_DS | KEYBOARD_E | KEYBOARD_F | KEYBOARD_FS | KEYBOARD_G | KEYBOARD_GS | KEYBOARD_A | KEYBOARD_AS | KEYBOARD_H | KEYBOARD_C_HIGH)
 
 typedef struct {
     int top, left, right, bottom;
@@ -47,7 +48,14 @@ typedef struct {
 
 static const int blackKeyAfterWhite[] = {0, 1, 3, 4, 5};
 static const EventBits_t blackKeyBits[] = {KEYBOARD_CS, KEYBOARD_DS, KEYBOARD_FS, KEYBOARD_GS, KEYBOARD_AS};
-static const EventBits_t whiteKeyBits[] = {KEYBOARD_C, KEYBOARD_D, KEYBOARD_E, KEYBOARD_F, KEYBOARD_G, KEYBOARD_A, KEYBOARD_H};
+static const EventBits_t whiteKeyBits[] = {KEYBOARD_C, KEYBOARD_D, KEYBOARD_E, KEYBOARD_F, KEYBOARD_G, KEYBOARD_A, KEYBOARD_H, KEYBOARD_C_HIGH};
+
+static octave_t getHighCOctave(void) {
+    if (octave < Octave_8) {
+        return (octave_t)(octave + 1);
+    }
+    return Octave_8;
+}
 
 static KeyboardGeometry getKeyboardGeometry(void) {
     KeyboardGeometry geometry;
@@ -60,7 +68,7 @@ static KeyboardGeometry getKeyboardGeometry(void) {
     geometry.bottom = (screenHeight > 0 ? screenHeight : CONFIG_HEIGHT) - 1;
     
     geometry.keyboardWidth = geometry.right - geometry.left + 1;
-    geometry.whiteKeyWidth = geometry.keyboardWidth / 7;
+    geometry.whiteKeyWidth = geometry.keyboardWidth / 8;
     geometry.whiteKeyHeight = geometry.bottom - geometry.top + 1;
     geometry.blackKeyWidth = (geometry.whiteKeyWidth * 2) / 3;
     geometry.blackKeyHeight = (geometry.whiteKeyHeight * 3) / 5;
@@ -90,7 +98,7 @@ static EventBits_t keyFromTouchPoint(int x, int y) {
 
     int whiteIdx = (x - geometry.left) / geometry.whiteKeyWidth;
     if (whiteIdx < 0) whiteIdx = 0;
-    if (whiteIdx > 6) whiteIdx = 6;
+    if (whiteIdx > 7) whiteIdx = 7;
     return whiteKeyBits[whiteIdx];
 }
 
@@ -98,7 +106,7 @@ static void drawKeyboardOctave(void) {
     KeyboardGeometry geometry = getKeyboardGeometry();
 
     // Draw white keys
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < 8; i++) {
         int x1 = geometry.left + (i * geometry.whiteKeyWidth);
         int x2 = x1 + geometry.whiteKeyWidth - 1;
         if (x2 > geometry.right) x2 = geometry.right;
@@ -211,6 +219,7 @@ void soundTask(void* param) {
             else if(eventBits & KEYBOARD_A) noteToPlay = noteToFrequency(Note_A, octave);
             else if(eventBits & KEYBOARD_AS) noteToPlay = noteToFrequency(Note_As, octave);
             else if(eventBits & KEYBOARD_H) noteToPlay = noteToFrequency(Note_H, octave);
+            else if(eventBits & KEYBOARD_C_HIGH) noteToPlay = noteToFrequency(Note_C, getHighCOctave());
         } else {
             noteToPlay = 0;
         }
