@@ -20,7 +20,7 @@
 #define DECAY_SPEED_FACTOR 1
 
 static octave_t octave = Octave_4;
-static uint8_t volume = 100;
+static uint8_t buzzerVolume = 100;
 static bool decay = false;
 static bool tremolo = false;
 
@@ -187,12 +187,13 @@ void soundTask(void* param) {
     EventBits_t eventBits = 0;
     uint16_t noteToPlay = 0;
     uint16_t lastPlayedNote = 0;
-    uint8_t decayVolume = volume;
+    uint8_t buzzerVolumeLast = buzzerVolume;
+    uint8_t decayVolume = buzzerVolume;
     uint16_t tremoloCounter = 0;
     float noteFrequency = 0;
     float tremoloVariation = 0;
 
-    buzzer_set_volume(volume);
+    buzzer_set_volume(buzzerVolume);
     playStartupMelody();
 
     for(;;) {
@@ -228,7 +229,7 @@ void soundTask(void* param) {
 
         if(noteToPlay != lastPlayedNote) {
             if(noteToPlay != 0) {
-                decayVolume = volume;
+                decayVolume = buzzerVolume;
                 buzzer_start(noteToPlay, 10000);
                 ESP_LOGI(TAG, "Playing note: %d Hz", noteToPlay);
             } else {
@@ -241,6 +242,10 @@ void soundTask(void* param) {
         if(noteToPlay != 0 && decayVolume > 5 && decay) {
             buzzer_set_volume(decayVolume);
             decayVolume -= DECAY_SPEED_FACTOR;
+        }
+        if (buzzerVolume != buzzerVolumeLast) {
+            buzzer_set_volume(buzzerVolume);
+            buzzerVolumeLast = buzzerVolume;
         }
 
         vTaskDelay(1/portTICK_PERIOD_MS);
@@ -281,15 +286,14 @@ void inputTask(void* param) {
         
         rotationChange = rotary_encoder_get_rotation(true);
             if(rotationChange != 0) {
-                if(volume + rotationChange > 100) {
-                    volume = 100;
-                } else if(volume + rotationChange < 1) {
-                    volume = 1;
+                if(buzzerVolume + rotationChange > 100) {
+                    buzzerVolume = 100;
+                } else if(buzzerVolume + rotationChange < 1) {
+                    buzzerVolume = 1;
                 } else {
-                    volume += rotationChange;
+                    buzzerVolume += rotationChange;
                 }
-                buzzer_set_volume(volume);
-                ESP_LOGI(TAG, "Volume changed to: %d", volume);
+                ESP_LOGI(TAG, "Volume changed to: %d", buzzerVolume);
         }
 
         vTaskDelay(10/portTICK_PERIOD_MS);
