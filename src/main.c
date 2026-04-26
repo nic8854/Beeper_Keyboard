@@ -18,6 +18,7 @@
 
 static octave_t octave = Octave_4;
 static uint8_t volume = 100;
+static bool decay = false;
 
 EventGroupHandle_t keyboardHitEventGroup;
 #define KEYBOARD_C          (1 << 0)  // bit 0
@@ -178,8 +179,9 @@ void soundTask(void* param) {
     EventBits_t eventBits = 0;
     uint16_t noteToPlay = 0;
     uint16_t lastPlayedNote = 0;
+    uint8_t decayVolume = volume;
 
-    buzzer_set_volume(100);
+    buzzer_set_volume(volume);
     playStartupMelody();
 
     for(;;) {
@@ -197,11 +199,13 @@ void soundTask(void* param) {
             else if(eventBits & KEYBOARD_A) noteToPlay = noteToFrequency(Note_A, octave);
             else if(eventBits & KEYBOARD_AS) noteToPlay = noteToFrequency(Note_As, octave);
             else if(eventBits & KEYBOARD_H) noteToPlay = noteToFrequency(Note_H, octave);
+            
         } else {
             noteToPlay = 0;
         }
         if(noteToPlay != lastPlayedNote) {
             if(noteToPlay != 0) {
+                decayVolume = volume;
                 buzzer_start(noteToPlay, 10000);
                 ESP_LOGI(TAG, "Playing note: %d Hz", noteToPlay);
             } else {
@@ -210,12 +214,17 @@ void soundTask(void* param) {
             }
             lastPlayedNote = noteToPlay;
         }
+        if(noteToPlay != 0 && decayVolume > 5 && decay) {
+            buzzer_set_volume(decayVolume);
+            decayVolume--;
+            ESP_LOGI(TAG, "Decaying volume: %d", decayVolume);
+        }
+        vTaskDelay(1/portTICK_PERIOD_MS);
     }
 }
 
 void inputTask(void* param) {
     int32_t rotationChange = 0;
-    uint32_t eventBits;
     for(;;) {
         if(button_get_state(SW0, true) == SHORT_PRESSED) {
             if(octave > Octave_0) {
@@ -228,6 +237,10 @@ void inputTask(void* param) {
             if(octave < Octave_8) {
                 octave ++;
             }
+        }
+
+        if(button_get_state(SW2, true) == SHORT_PRESSED) {
+            decay = !decay;
         }
 
         for(int i = LED0; i <= LED7; i++) {
