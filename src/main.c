@@ -239,11 +239,12 @@ void soundTask(void* param) {
             lastPlayedNote = noteToPlay;
         }
 
-        if(noteToPlay != 0 && decayVolume > 5 && decay) {
-            buzzer_set_volume(decayVolume);
-            decayVolume -= DECAY_SPEED_FACTOR;
-        }
-        if (buzzerVolume != buzzerVolumeLast) {
+        if(decay) {
+            if(noteToPlay != 0 && decayVolume > 5) {
+                buzzer_set_volume(decayVolume);
+                decayVolume -= DECAY_SPEED_FACTOR;
+            }
+        } else if (buzzerVolume != buzzerVolumeLast) {
             buzzer_set_volume(buzzerVolume);
             buzzerVolumeLast = buzzerVolume;
         }
