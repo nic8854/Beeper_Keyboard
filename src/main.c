@@ -39,80 +39,83 @@ EventGroupHandle_t keyboardHitEventGroup;
 #define KEYBOARD_H          (1 << 11) // bit 11
 #define KEYBOARD_ALL        (KEYBOARD_C | KEYBOARD_CS | KEYBOARD_D | KEYBOARD_DS | KEYBOARD_E | KEYBOARD_F | KEYBOARD_FS | KEYBOARD_G | KEYBOARD_GS | KEYBOARD_A | KEYBOARD_AS | KEYBOARD_H)
 
-static EventBits_t keyFromTouchPoint(int x, int y) {
+typedef struct {
+    int top, left, right, bottom;
+    int keyboardWidth, whiteKeyWidth, whiteKeyHeight;
+    int blackKeyWidth, blackKeyHeight;
+} KeyboardGeometry;
+
+static const int blackKeyAfterWhite[] = {0, 1, 3, 4, 5};
+static const EventBits_t blackKeyBits[] = {KEYBOARD_CS, KEYBOARD_DS, KEYBOARD_FS, KEYBOARD_GS, KEYBOARD_AS};
+static const EventBits_t whiteKeyBits[] = {KEYBOARD_C, KEYBOARD_D, KEYBOARD_E, KEYBOARD_F, KEYBOARD_G, KEYBOARD_A, KEYBOARD_H};
+
+static KeyboardGeometry getKeyboardGeometry(void) {
+    KeyboardGeometry geometry;
     const int screenWidth = (int)lcdGetWidth();
     const int screenHeight = (int)lcdGetHeight();
-    const int top = 16;
-    const int left = 0;
-    const int right = (screenWidth > 0 ? screenWidth : CONFIG_WIDTH) - 1;
-    const int bottom = (screenHeight > 0 ? screenHeight : CONFIG_HEIGHT) - 1;
+    
+    geometry.top = 16;
+    geometry.left = 0;
+    geometry.right = (screenWidth > 0 ? screenWidth : CONFIG_WIDTH) - 1;
+    geometry.bottom = (screenHeight > 0 ? screenHeight : CONFIG_HEIGHT) - 1;
+    
+    geometry.keyboardWidth = geometry.right - geometry.left + 1;
+    geometry.whiteKeyWidth = geometry.keyboardWidth / 7;
+    geometry.whiteKeyHeight = geometry.bottom - geometry.top + 1;
+    geometry.blackKeyWidth = (geometry.whiteKeyWidth * 2) / 3;
+    geometry.blackKeyHeight = (geometry.whiteKeyHeight * 3) / 5;
+    
+    return geometry;
+}
 
-    if (x < left || x > right || y < top || y > bottom) {
+static EventBits_t keyFromTouchPoint(int x, int y) {
+    KeyboardGeometry geometry = getKeyboardGeometry();
+
+    if (x < geometry.left || x > geometry.right || y < geometry.top || y > geometry.bottom) {
         return 0;
     }
 
-    const int keyboardWidth = right - left + 1;
-    const int whiteKeyWidth = keyboardWidth / 7;
-    const int whiteKeyHeight = bottom - top + 1;
-    const int blackKeyWidth = (whiteKeyWidth * 2) / 3;
-    const int blackKeyHeight = (whiteKeyHeight * 3) / 5;
-
-    const int blackKeyAfterWhite[] = {0, 1, 3, 4, 5};
-    const EventBits_t blackKeyBits[] = {KEYBOARD_CS, KEYBOARD_DS, KEYBOARD_FS, KEYBOARD_GS, KEYBOARD_AS};
     for (int i = 0; i < (int)(sizeof(blackKeyAfterWhite) / sizeof(blackKeyAfterWhite[0])); i++) {
         const int idx = blackKeyAfterWhite[i];
-        const int boundaryX = left + ((idx + 1) * whiteKeyWidth);
-        int x1 = boundaryX - (blackKeyWidth / 2);
-        int x2 = x1 + blackKeyWidth - 1;
-        if (x1 < left) x1 = left;
-        if (x2 > right) x2 = right;
+        const int boundaryX = geometry.left + ((idx + 1) * geometry.whiteKeyWidth);
+        int x1 = boundaryX - (geometry.blackKeyWidth / 2);
+        int x2 = x1 + geometry.blackKeyWidth - 1;
+        if (x1 < geometry.left) x1 = geometry.left;
+        if (x2 > geometry.right) x2 = geometry.right;
 
-        if (x >= x1 && x <= x2 && y >= top && y <= (top + blackKeyHeight)) {
+        if (x >= x1 && x <= x2 && y >= geometry.top && y <= (geometry.top + geometry.blackKeyHeight)) {
             return blackKeyBits[i];
         }
     }
 
-    const EventBits_t whiteKeyBits[] = {KEYBOARD_C, KEYBOARD_D, KEYBOARD_E, KEYBOARD_F, KEYBOARD_G, KEYBOARD_A, KEYBOARD_H};
-    int whiteIdx = (x - left) / whiteKeyWidth;
+    int whiteIdx = (x - geometry.left) / geometry.whiteKeyWidth;
     if (whiteIdx < 0) whiteIdx = 0;
     if (whiteIdx > 6) whiteIdx = 6;
     return whiteKeyBits[whiteIdx];
 }
 
 static void drawKeyboardOctave(void) {
-    const int screenWidth = (int)lcdGetWidth();
-    const int screenHeight = (int)lcdGetHeight();
-    const int top = 16;
-    const int left = 0;
-    const int right = (screenWidth > 0 ? screenWidth : CONFIG_WIDTH) - 1;
-    const int bottom = (screenHeight > 0 ? screenHeight : CONFIG_HEIGHT) - 1;
-
-    const int keyboardWidth = right - left + 1;
-    const int whiteKeyWidth = keyboardWidth / 7;
-    const int whiteKeyHeight = bottom - top + 1;
-    const int blackKeyWidth = (whiteKeyWidth * 2) / 3;
-    const int blackKeyHeight = (whiteKeyHeight * 3) / 5;
+    KeyboardGeometry geometry = getKeyboardGeometry();
 
     // Draw white keys
     for (int i = 0; i < 7; i++) {
-        int x1 = left + (i * whiteKeyWidth);
-        int x2 = x1 + whiteKeyWidth - 1;
-        if (x2 > right) x2 = right;
-        lcdDrawFillRect(x1, top, x2, bottom, WHITE);
-        lcdDrawRect(x1, top, x2, bottom, GRAY);
+        int x1 = geometry.left + (i * geometry.whiteKeyWidth);
+        int x2 = x1 + geometry.whiteKeyWidth - 1;
+        if (x2 > geometry.right) x2 = geometry.right;
+        lcdDrawFillRect(x1, geometry.top, x2, geometry.bottom, WHITE);
+        lcdDrawRect(x1, geometry.top, x2, geometry.bottom, GRAY);
     }
 
     // Draw black keys
-    const int blackKeyAfterWhite[] = {0, 1, 3, 4, 5};
     for (int i = 0; i < (int)(sizeof(blackKeyAfterWhite) / sizeof(blackKeyAfterWhite[0])); i++) {
         const int idx = blackKeyAfterWhite[i];
-        const int boundaryX = left + ((idx + 1) * whiteKeyWidth);
-        int x1 = boundaryX - (blackKeyWidth / 2);
-        int x2 = x1 + blackKeyWidth - 1;
-        if (x1 < left) x1 = left;
-        if (x2 > right) x2 = right;
-        lcdDrawFillRect(x1, top, x2, top + blackKeyHeight, BLACK);
-        lcdDrawRect(x1, top, x2, top + blackKeyHeight, GRAY);
+        const int boundaryX = geometry.left + ((idx + 1) * geometry.whiteKeyWidth);
+        int x1 = boundaryX - (geometry.blackKeyWidth / 2);
+        int x2 = x1 + geometry.blackKeyWidth - 1;
+        if (x1 < geometry.left) x1 = geometry.left;
+        if (x2 > geometry.right) x2 = geometry.right;
+        lcdDrawFillRect(x1, geometry.top, x2, geometry.top + geometry.blackKeyHeight, BLACK);
+        lcdDrawRect(x1, geometry.top, x2, geometry.top + geometry.blackKeyHeight, GRAY);
     }
     lcdUpdateVScreen();
 }
